@@ -13,6 +13,7 @@ services:
     depends_on:
       - db
     command: python /app/main.py
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
@@ -23,6 +24,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
 
 volumes:
   db_data:
