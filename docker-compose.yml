@@ -10,7 +10,6 @@ services:
     environment:
       Host_db: db
       Database: uni
-      User_db: root
     depends_on:
       - db
     command: python /app/main.py
