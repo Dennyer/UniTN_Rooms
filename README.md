@@ -6,17 +6,23 @@
 - 🔍 **Search Capabilities**: Find rooms across various buildings.
 - ❤️ **Favorites**: Save your preferred buildings for quicker access.
 - 📅 **Schedule Overview**: View the complete schedule of a room for a chosen date.
+- 🐳 **Docker Support**: Easy deployment using Docker and Docker Compose.
 
 ## 🚀 Future Plans
 - Integrate a course schedule feature similar to [this bot](https://t.me/unitnEasyroomBot). Implementation is subject to time constraints.
-- 🐳 Implementation in docker to make the deployment easier
 
 ## 🛠 Prerequisites
 - MySQL server
 - Python 3
 
 ## 📋 Installation & Setup
-1. **Configuration**: Rename the "keys.cfg template" to "keys.cfg" and update it with your specific details.
+
+### Docker Setup 🐳
+1. **Configuration**: Copy `.env` to `.env.local` and set the necessary environment variables.
+2. **Build and Run**: Execute `docker-compose up --build` to build and start the bot and database containers.
+
+### Traditional Setup 👷🏻‍♂️
+1. **Configuration**: Copy `.env` to `.env.local` and set the necessary environment variables.
 2. **Database Setup**: Execute the `database.sql` script to create and structure the database.
 3. **Python Dependencies**: Install the required Python libraries (refer to the requirements file in the Source folder).
 4. **Run the Bot**: Execute `main.py` to start the bot.

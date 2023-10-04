@@ -1,5 +1,8 @@
 import mysql.connector
 import logging
+import time
+from mysql.connector import Error
+
 
 '''
 db_connect(host, user, passwd, db) → connects to DB
@@ -21,13 +24,29 @@ def db_connect(h, u, p, d):
     global mydb, host, user, passwd, db
 
     host, user, passwd, db = h, u, p, d
+    retries = 5  # Number of times to retry connecting
+    delay = 5  # Delay in seconds between retries
 
-    mydb = mysql.connector.connect(
-        host=h,
-        user=u,
-        password=p,
-        database=d
-    )
+    for n in range(retries):
+        try:
+            mydb = mysql.connector.connect(
+                host=host,
+                user=user,
+                password=passwd,
+                database=db
+            )
+            if mydb.is_connected():
+                print("Successfully connected to the database")
+                return mydb
+        except Error as e:
+            print(f"Error: {e}")
+            print(f"Failed to connect, retrying in {delay} seconds...")
+        
+        time.sleep(delay)
+
+    print("Failed to connect to the database after multiple retries.")
+    return None
+
 
 def check_db():
     try:

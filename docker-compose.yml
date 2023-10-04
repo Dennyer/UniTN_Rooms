@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+  app:
+    build: .
+    volumes:
+      - ./Source:/app
+    env_file:
+      - .env.local
+    environment:
+      Host_db: db
+      Database: uni
+      User_db: root
+    depends_on:
+      - db
+    command: python /app/main.py
+
+  db:
+    image: mysql:8.0
+    env_file:
+      - .env.local
+    environment:
+      MYSQL_DATABASE: uni
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+volumes:
+  db_data:

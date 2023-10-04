@@ -51,17 +51,14 @@ def main():
     updater.idle()
 
 
-# Loads API keys from "keys.cfg"
+# Loads API keys from "env"
 def load_keys():
-    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-    rel_path = "keys.cfg"
-    abs_file_path = os.path.join(script_dir, rel_path)
-    with open(abs_file_path) as myfile:
-        for line in myfile:
-            name, var = line.partition("=")[::2]
-            keys[name.strip()] = var[:-1]
-        myfile.close()
-
+    keys['Telegram_key'] = os.environ.get('Telegram_key')
+    keys['Host_db'] = os.environ.get('Host_db')
+    keys['User_db'] = os.environ.get('User_db')
+    keys['Password_db'] = os.environ.get('Password_db')
+    keys['Database'] = os.environ.get('Database')
+    
 
 ############################ Command handlers ############################
 
