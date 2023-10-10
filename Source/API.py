@@ -1,5 +1,5 @@
 import datetime
-
+import logging
 import requests
 import collections
 import json
@@ -74,7 +74,10 @@ def get_headquarter_name_by_code(code):
                 head = value
             elif key == "valore":
                 if code == value:
+                    logging.debug("API - get_headquarter_name_by_code - " + str(head))
                     return head
+
+    logging.debug("API - get_headquarter_name_by_code - False")
 
     return False
 

@@ -36,22 +36,21 @@ def db_connect(h, u, p, d):
                 database=db
             )
             if mydb.is_connected():
-                print("Successfully connected to the database")
+                logging.debug('DB - db_connect - Successfully connected to the database')
                 return mydb
         except Error as e:
-            print(f"Error: {e}")
-            print(f"Failed to connect, retrying in {delay} seconds...")
+            logging.debug('DB - db_connect - failed, retrying in ' + str(delay) + ' error: ' + str(e) )
         
         time.sleep(delay)
 
-    print("Failed to connect to the database after multiple retries.")
+    logging.debug('DB - db_connect - Failed to connect to the database after multiple retries')
     return None
 
 
 def check_db():
     try:
         mycursor = mydb.cursor()
-        request = """SELECT id FROM userdata WHERE id = (%s)"""
+        request = """SELECT id FROM userdata LIMIT 1"""
         mycursor.execute(request)
         mycursor.close()
     except Exception:
@@ -88,12 +87,13 @@ def create_user(id):
     check_db()
     mycursor = mydb.cursor()
     request = """INSERT INTO userdata (id) VALUES (%s)"""
-    val = [int(id)]
+    val = [str(id)]
     try:
         mycursor.execute(request, val)
         mydb.commit()
         mycursor.close()
-    except Exception:
+    except Exception as e:
+        logging.debug('DB - create_user - error: ' + str(e))
         return True
     res = abs(mycursor.rowcount)
 
@@ -122,17 +122,18 @@ def number_of_headquarters(id):
 
 
 def add_user_headquarter(id, code, name):
+    logging.debug("DB - add_user_headquarter - " + str(id) + " - " + str(code) + " - " + str(name))
     check_db()
     mycursor = mydb.cursor()
     request = """INSERT INTO headquarter (id, name_headquarter, code) VALUES (%s, %s, %s)"""
-    val = [int(id), str(name), str(code)]
+    val = [str(id), str(name), str(code)]
     try:
         mycursor.execute(request, val)
         mydb.commit()
         mycursor.close()
     except Exception as e:
-        print(e)
-        return True
+        logging.debug('DB - add_user_headquarter - error: ' + str(e))
+        return False
 
     res = abs(mycursor.rowcount)
 
@@ -148,13 +149,13 @@ def rem_user_headquarter(id, code):
     check_db()
     mycursor = mydb.cursor()
     request = """DELETE FROM headquarter WHERE id = %s AND code = %s"""
-    val = [int(id), str(code)]
+    val = [str(id), str(code)]
     try:
         mycursor.execute(request, val)
         mydb.commit()
         mycursor.close()
     except Exception as e:
-        print(e)
+        logging.debug('DB - rem_user_headquarter - error: ' + str(e))
         return True
 
     res = abs(mycursor.rowcount)
