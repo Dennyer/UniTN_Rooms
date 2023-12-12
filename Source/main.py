@@ -110,8 +110,8 @@ def error(update: Update, context: CallbackContext):
                              text=DT['error'],
                              reply_markup=ReplyKeyboardMarkup(
                                  keyboard=KEYBOARD.general_keyboard(),
-                                 resize_keyboard=True
-                                 , one_time_keyboard=True
+                                 resize_keyboard=True,
+                                 one_time_keyboard=True
                              ))
 
 
@@ -146,8 +146,8 @@ def rooms(update: Update, context: CallbackContext, query):
         reply_markup = KEYBOARD.headquarters_keyboard("add1", id)
 
     if query:
-        update.callback_query.message.edit_text(text,
-                                                reply_markup=reply_markup)
+        message_update_text(update, context, text, reply_markup=reply_markup)
+
     else:
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  parse_mode="MarkdownV2",
@@ -164,8 +164,7 @@ def schedule(update: Update, context: CallbackContext):
 def settings(update: Update, context: CallbackContext, query):
     logging.debug('Main - settings - Impostazioni')
     if query:
-        update.callback_query.message.edit_text(text=DT["settings"],
-                                                reply_markup=KEYBOARD.settings_keyboard())
+        message_update_text(update, context, text=DT["settings"], reply_markup=KEYBOARD.settings_keyboard())
     else:
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  parse_mode="MarkdownV2",
@@ -200,42 +199,35 @@ def query_handler(update: Update, context: CallbackContext):
         if query_split[1] == "headquarter":
             if query_split[2] == "add":
                 if query_split[3] == "0":
-                    update.callback_query.message.edit_text(DT['addHeadquarter'],
-                                                            reply_markup=KEYBOARD.headquarters_keyboard("add", id))
+                    message_update_text(update, context, DT['addHeadquarter'], reply_markup=KEYBOARD.headquarters_keyboard("add", id))
 
                 elif DB.add_user_headquarter(id, query_split[3], API.get_headquarter_name_by_code(query_split[3])):
-                    update.callback_query.message.edit_text(DT["headquarterAdded"])
+                    message_update_text(update, context, DT["headquarterAdded"])
 
             elif query_split[2] == "rem":
                 if query_split[3] == "0":
-                    update.callback_query.message.edit_text(DT['remHeadquarter'],
-                                                            reply_markup=KEYBOARD.headquarters_keyboard("rem", id))
+                    message_update_text(update, context, DT['remHeadquarter'], reply_markup=KEYBOARD.headquarters_keyboard("rem", id))
 
                 elif DB.rem_user_headquarter(id, query_split[3]):
-                    update.callback_query.message.edit_text(DT["headquarterRemoved"])
+                    message_update_text(update, context, DT["headquarterRemoved"])
 
             elif query_split[2] == "sel":
-                update.callback_query.message.edit_text(DT["headquarterAddRem"],
-                                                        reply_markup=KEYBOARD.settings_headquarter_keyboard())
+                message_update_text(update, context, DT["headquarterAddRem"], reply_markup=KEYBOARD.settings_headquarter_keyboard())
 
     elif query_split[0] == "headquarter":
         if query_split[1] == "sel":
-            update.callback_query.message.edit_text(DT["selectOptions"],
-                                                    reply_markup=KEYBOARD.room_headquarter_keyboard(query_split[2], id))
+                message_update_text(update, context, DT["selectOptions"], reply_markup=KEYBOARD.room_headquarter_keyboard(query_split[2], id))
 
         elif query_split[1] == "selpl":
             send_rooms_day(update.callback_query.message)
 
     elif query_split[0] == "date":
         if query_split[1] == "create":
-            update.callback_query.message.edit_text(DT["selectDate"],
-                                                    reply_markup=telegramcalendar.create_calendar(
-                                                        "room;selroom;" + query_split[2] + ";" + query_split[3]))
+            message_update_text(update, context, DT["selectDate"], reply_markup=telegramcalendar.create_calendar("room;selroom;" + query_split[2] + ";" + query_split[3]))
 
         else:
-            selected, date = telegramcalendar.process_calendar_selection(update, context,
-                                                                         "room;selroom;" + query_split[2] + ";" +
-                                                                         query_split[3])
+            selected, date = telegramcalendar.process_calendar_selection(update, context, "room;selroom;" + query_split[2] + ";" + query_split[3])
+
             if selected:
                 send_rooms_day(update, context, query_split[2], query_split[3], date)
 
@@ -253,9 +245,41 @@ def send_rooms_day(update: Update, context: CallbackContext, head, room, date="n
     for k in events:
         text += "\n" + k + " | " + events[k]
 
-    update.callback_query.message.edit_text(DT['viewResult'] + room + " il " + str(date.day) + "/" + str(date.month) + "/" + str(date.year) + ":" + text,
-                                            reply_markup=KEYBOARD.date_room_hedquarter_keyboard(head, room))
+    message_update_text(update, context, DT['viewResult'] + room + " il " + str(date.day) + "/" + str(date.month) + "/" + str(date.year) + ":" + text, reply_markup=KEYBOARD.date_room_hedquarter_keyboard(head, room))
 
+
+############################ Helper ############################
+
+def message_update_text(update: Update, context: CallbackContext, text, reply_markup=None):
+
+    text = (text.replace("_", "\\_")
+                .replace("*", "\\*")
+                .replace("[", "\\[")
+                .replace("]", "\\]")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("~", "\\~")
+                .replace("`", "\\`")
+                .replace(">", "\\>")
+                .replace("#", "\\#")
+                .replace("+", "\\+")
+                .replace("-", "\\-")
+                .replace("=", "\\=")
+                .replace("|", "\\|")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace(".", "\\.")
+                .replace("!", "\\!"))
+
+
+    try:
+        update.callback_query.message.edit_text(parse_mode="MarkdownV2", disable_web_page_preview=True, text=text, reply_markup=reply_markup)
+    except:
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 parse_mode="MarkdownV2",
+                                 disable_web_page_preview=True,
+                                 text=text,
+                                 reply_markup=reply_markup)
 
 ############################ Main ############################
 

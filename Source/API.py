@@ -7,7 +7,8 @@ from datetime import date as data
 from dictionary import default_text as DT
 
 '''
-get_headquarters() → returns the headquarters from offline/online
+get_headquarters() → returns the headquarters and updates after 12h
+get_headquarters_data() → fetches the headquarters and updates it
 get_headquarters_rooms() → returns the headquarters from online
 get_headquarter_name_by_code(code) → return the name of the headquarter with a given code
 get_headquarter_info(code, date) → returns json formatted response from easyroom
@@ -19,18 +20,31 @@ get_headquarter_room_events(code, room, date=data.today(), info="none") → retu
 '''
 
 headquarters = {}
+last_update_time = None
+headquarter_info_cache = {}
 
 
 def get_headquarters():
-    global headquarters
-    if headquarters == {}:
-        headquarters = get_headquarters_rooms()[0]
-        # headquarters = """{ "headquarters": """ + headquarters + "}"
+    global headquarters, last_update_time
 
-        try:
-            headquarters = json.loads(headquarters)
-        except:
-            return (DT["error"])
+    if not headquarters or (datetime.datetime.now() - last_update_time).total_seconds() > 43200:
+        # Fetch new data and update the timestamp
+        headquarters = get_headquarters_data()
+        last_update_time = datetime.datetime.now()
+
+    return headquarters
+
+
+def get_headquarters_data():
+    
+    headquarters = get_headquarters_rooms()[0]
+    # headquarters = """{ "headquarters": """ + headquarters + "}"
+    try:
+        headquarters = json.loads(headquarters)
+        logging.info("API - get_headquarters_data - Headquarters aggiornato")
+    except:
+        logging.info("API - get_headquarters_data - Errore headquarters")
+        return (DT["error"])
 
     return headquarters
 
@@ -77,16 +91,39 @@ def get_headquarter_name_by_code(code):
                     logging.debug("API - get_headquarter_name_by_code - " + str(head))
                     return head
 
-    logging.debug("API - get_headquarter_name_by_code - False")
+    logging.info("API - get_headquarter_name_by_code - False")
 
     return False
 
 
-def get_headquarter_info(code, date=data.today().strftime("%d-%m-%Y")):
+def get_headquarter_info(code, date_val=data.today().strftime("%d-%m-%Y")):
+    global headquarter_info_cache
+
+    # If it's in the cache for less than 6 h return it
+    if (code in headquarter_info_cache and date_val in headquarter_info_cache[code] and
+        (datetime.datetime.now() - headquarter_info_cache[code][date_val]['timestamp']).total_seconds() < 21600):
+        
+        logging.debug("API - get_headquarter_info - Local fetch for code: " + code + " and day: " + str(date_val))
+        return headquarter_info_cache[code][date_val]['data']
+
+    cleanup_old_cache_entries()
+
+    fetched_data = get_headquarter_info_from_source(code, date_val)
+    if not code in headquarter_info_cache:
+        headquarter_info_cache[code] = {}
+    headquarter_info_cache[code][date_val] = {
+        'timestamp': datetime.datetime.now(),
+        'data': fetched_data
+    }
+    logging.info("API - get_headquarter_info - Online fetch for code: " + code + " and day: " + str(date_val))
+
+    return fetched_data
+
+def get_headquarter_info_from_source(code, date_val):
     data = {
         "form-type": "rooms",
         "sede": code,
-        "date": date,
+        "date": date_val,
         "_lang": "it"
     }
 
@@ -96,6 +133,18 @@ def get_headquarter_info(code, date=data.today().strftime("%d-%m-%Y")):
 
     ris = response.json()
     return ris
+
+def cleanup_old_cache_entries():
+    global headquarter_info_cache
+    one_week_ago = datetime.datetime.now() - datetime.timedelta(days=7)
+
+    for code in list(headquarter_info_cache.keys()):
+        for date_val in list(headquarter_info_cache[code].keys()):
+            if headquarter_info_cache[code][date_val]['timestamp'] < one_week_ago:
+                del headquarter_info_cache[code][date_val]
+        # If no dates are left for a code, remove the code entry as well
+        if not headquarter_info_cache[code]:
+            del headquarter_info_cache[code]
 
 
 def get_headquarter_rooms(code, date=data.today().strftime("%d-%m-%Y"), info="none"):
@@ -164,7 +213,7 @@ def get_headquarter_busy_rooms(code, date=data.today().strftime("%d-%m-%Y"), tim
 
 def get_headquarter_room_events(code, room, date=data.today(), info="none"):
     if info == "none":
-        info_local = get_headquarter_info(code, date)
+        info_local = get_headquarter_info(code, date.strftime("%d-%m-%Y"))
     else:
         info_local = info
 
@@ -207,7 +256,8 @@ def get_headquarter_room_events(code, room, date=data.today(), info="none"):
                 time_period_stop = datetime.datetime(int(ymd[0]), int(ymd[1]), int(ymd[2]), int(h_end), int(m_end))
 
                 if time_period_start.time() >= time_event_start.time() and time_period_stop.time() <= time_event_stop.time():
-                    del room_times_events[t["label"]]
+                    if t["label"] in room_times_events:
+                        del room_times_events[t["label"]] 
 
     room_times_events = collections.OrderedDict(sorted(room_times_events.items()))
     inizio, fine = "", ""
