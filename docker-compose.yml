@@ -10,6 +10,7 @@ services:
     environment:
       Host_db: db
       Database: uni
+      TZ: Europe/Rome
     depends_on:
       - db
     command: python /app/main.py
@@ -21,6 +22,7 @@ services:
       - .env.local
     environment:
       MYSQL_DATABASE: uni
+      TZ: Europe/Rome
     volumes:
       - db_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d

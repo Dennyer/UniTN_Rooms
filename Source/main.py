@@ -42,6 +42,7 @@ def main():
     # Commands handler
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', help))
+    dispatcher.add_error_handler(error_handler)
 
     # Messages handler
     dispatcher.add_handler(MessageHandler(Filters.text, message_handler))
@@ -281,6 +282,8 @@ def message_update_text(update: Update, context: CallbackContext, text, reply_ma
                                  text=text,
                                  reply_markup=reply_markup)
 
+def error_handler (update: Update, context: CallbackContext):
+    print(f"Update: {update} caused error: {context.error}")
 ############################ Main ############################
 
 if __name__ == '__main__':
